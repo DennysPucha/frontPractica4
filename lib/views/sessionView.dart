@@ -35,6 +35,7 @@ class _SessionViewState extends State<SessionView> {
             util.saveValue('token', value.datos['token']);
             util.saveValue('external', value.datos['external']);
             util.saveValue('user', value.datos['user']);
+            util.saveValue('rolUser', value.datos['rol']);
             final SnackBar msg=SnackBar(content: Text('EXITO! BIENVENIDO ${value.datos["user"]}'));
             ScaffoldMessenger.of(context).showSnackBar(msg);
             Navigator.pushNamed(context, '/principal');

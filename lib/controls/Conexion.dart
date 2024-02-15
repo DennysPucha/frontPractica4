@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:noticias/controls/utiles/Utiles.dart';
 
 class Conexion {
-  final String URL = "http://localhost:3000/api/admin/";
-  final String URL_MEDIA = "http://localhost:3000/multimedia/";
+  final String URL = "http://192.168.3.10:3000/api/admin/";
+  final String URL_MEDIA = "http://192.168.3.10:3000/multimedia/";
   static bool NO_TOKEN = false;
 
   Future<RespuestaGenerica> get(String recurso, bool token) async {
