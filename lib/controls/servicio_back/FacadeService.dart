@@ -103,11 +103,11 @@ class FacadeService {
   }
 
   Future<RespuestaGenerica> getComentarios(String external) async {
-    return await c.get('noticia/get/comentarios/$external', false);
+    return await c.get('noticia/get/comentarios/$external', true);
   }
 
   Future<RespuestaGenerica> getAllComentarios() async {
-    return await c.get('comentarios', false);
+    return await c.get('comentarios', true);
   }
 
   Future<RespuestaGenerica> verComentariosUserNoti(String externalNoticia, Map<String, String> mapa) async {
@@ -154,25 +154,25 @@ class FacadeService {
   }
 
   Future<RespuestaGenerica> postComentario(Map<String, String> mapa) async {
-    return await c.post('comentario/save', false, mapa);
+    return await c.post('comentario/save', true, mapa);
   }
 
   Future<RespuestaGenerica> getUser(String external) async {
-    return await c.get('persona/get/$external', false);
+    return await c.get('persona/get/$external', true);
   }
 
   Future<RespuestaGenerica> modifyUser(
       Map<String, String> mapa, String external) async {
-    return await c.post('persona/modificar/$external', false, mapa);
+    return await c.post('persona/modificar/$external',true, mapa);
   }
 
   Future<RespuestaGenerica> modifyComment(
       Map<String, String> mapa, String external) async {
-    return await c.post('comentario/modify/$external', false, mapa);
+    return await c.post('comentario/modify/$external', true, mapa);
   }
 
   Future<RespuestaGenerica> banearUsuarioxComentario(String external, Map<String, String> mapa) async {
-    return await c.post('comentario/banear/$external', false, mapa);
+    return await c.post('comentario/banear/$external', true, mapa);
   }
 
   
