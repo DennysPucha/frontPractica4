@@ -12,10 +12,10 @@ class RegisterView extends StatefulWidget {
 
 class _RegisterViewState extends State<RegisterView> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController nombresC = TextEditingController(); // Define nombresC
-  final TextEditingController apellidosC = TextEditingController(); // Define apellidosC
-  final TextEditingController correoC = TextEditingController(); // Define correoC
-  final TextEditingController claveC = TextEditingController(); // Define claveC
+  final TextEditingController nombresC = TextEditingController(); 
+  final TextEditingController apellidosC = TextEditingController(); 
+  final TextEditingController correoC = TextEditingController();
+  final TextEditingController claveC = TextEditingController(); 
 
   void _iniciar(){
     setState(() {

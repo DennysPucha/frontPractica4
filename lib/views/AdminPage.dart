@@ -9,14 +9,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class AdminPage extends StatefulWidget {
+  const AdminPage({Key? key}) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _AdminPageState createState() => _AdminPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _AdminPageState extends State<AdminPage> {
   List<Map<String, dynamic>> noticias = [];
   List<Map<String, dynamic>> comentarios = [];
   List<Map<String, dynamic>> _comentariosLocales = [];
@@ -60,10 +60,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> verComentariosUser(String externalId) async {
+  Future<void> verComentariosNoti(String externalNoticia) async {
     try {
+      Utiles util = Utiles();
+      String? externalUser = await util.getValue('external');
       FacadeService servicio = FacadeService();
-      var value = await servicio.getComentarios(externalId);
+      Map<String, String> mapa = {"persona": externalUser.toString()};
+      var value = await servicio.getComentarios(externalNoticia);
       if (value.code == 200) {
         var comentariosAPI = List<Map<String, dynamic>>.from(value.datos);
         for (var comentario in comentariosAPI) {
@@ -89,113 +92,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> verComentariosNoti(String externalNoticia) async {
-    try {
-      Utiles util = Utiles();
-      String? externalUser = await util.getValue('external');
-      FacadeService servicio = FacadeService();
-      Map<String, String> mapa = {"persona": externalUser.toString()};
-      var value = await servicio.verComentariosUserNoti(externalNoticia, mapa);
-      if (value.code == 200) {
-        var comentariosAPI = List<Map<String, dynamic>>.from(value.datos);
-        for (var comentario in comentariosAPI) {
-          var response = await FacadeService().getUser(comentario['usuario']);
-
-          if (response.code == 200) {
-            var usuario = response.datos;
-            comentario['user'] =
-                "${usuario['nombres']} ${usuario['apellidos']}";
-          } else {
-            comentario['user'] = "Usuario Desconocido";
-          }
-        }
-        setState(() {
-          _comentariosLocales = comentariosAPI;
-        });
-      } else {
-        final SnackBar msg = SnackBar(content: Text(value.msg.toString()));
-        ScaffoldMessenger.of(context).showSnackBar(msg);
-      }
-    } catch (error) {
-      print("Error al obtener comentarios: $error");
-    }
-  }
-
-  Future<void> agregarComentario(String externalId) async {
-    String comentario = _commentController.text;
-    Utiles util = Utiles();
-    String? external_user = await util.getValue('external');
-
-    // Verificar y solicitar permiso de ubicación si es necesario
-    if (await Permission.location.isGranted) {
-      try {
-        Position position = await _determinarposicion();
-
-        String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-        Map<String, String> mapa = {
-          "texto": comentario,
-          "usuario": external_user.toString(),
-          "fecha": formattedDate,
-          "latitud": position.latitude.toString(),
-          "longitud": position.longitude.toString(),
-          "noticia": externalId,
-        };
-
-        var response = await FacadeService().postComentario(mapa);
-        if (response.code == 200) {
-          // Marcar que se agregó un comentario con éxito
-          comentarioAgregado = true;
-        } else {
-          showPlatformDialog(
-            context: context,
-            builder: (context) {
-              return BasicDialogAlert(
-                title: Text("Error"),
-                content: Text(response.msg.toString()),
-                actions: <Widget>[
-                  BasicDialogAction(
-                    title: Text("OK"),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-        }
-      } catch (e) {
-        print('Error al obtener la posición: $e');
-      }
-    } else {
-      await Permission.location.request();
-    }
-  }
-
-  Future<Position> _determinarposicion() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    return await Geolocator.getCurrentPosition();
-  }
-
   void cerrarSesion() async {
     Utiles util = Utiles();
     util.removeAll();
@@ -209,7 +105,6 @@ class _HomePageState extends State<HomePage> {
     comentarios.clear();
     comentarioAgregado = true;
     await verComentariosNoti(externalId);
-    await verComentariosUser(externalId);
     bool mostrarMisComentarios = false;
 
     showModalBottomSheet(
@@ -257,18 +152,8 @@ class _HomePageState extends State<HomePage> {
                               value: false,
                               child: Text("Todos los comentarios"),
                             ),
-                            DropdownMenuItem(
-                              value: true,
-                              child: Text("Mis comentarios"),
-                            ),
                           ],
-                          onChanged: (value) async{
-                            setState(() {
-                              mostrarMisComentarios = value!;
-                              
-                            });
-                            //await verComentariosUser(externalId);
-                          },
+                          onChanged: (value) async {},
                         ),
                       ],
                     ),
@@ -276,7 +161,6 @@ class _HomePageState extends State<HomePage> {
                     Container(
                       constraints: BoxConstraints(maxHeight: 400),
                       child: ListView.builder(
-                        
                         shrinkWrap: true,
                         itemCount: mostrarMisComentarios
                             ? _comentariosLocales.length
@@ -286,7 +170,6 @@ class _HomePageState extends State<HomePage> {
                               ? _comentariosLocales[index]
                               : comentarios[index];
                           return ListTile(
-
                             title: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -318,62 +201,21 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ],
                             ),
-                            trailing: (mostrarMisComentarios)
-                                ? PopupMenuButton<String>(
-                                    onSelected: (String choice) async {
-                                      if (choice == 'editar') {
-                                        _showEditCommentSheet(
-                                          comentario['texto'],
-                                          (editedText) async {
-                                            await editarComentario(
-                                              comentario['external_id'],
-                                              editedText,
-                                              noticias[entryKey]['external_id'],
-                                            );
-                                            setState(() {});
-                                          },
-                                        );
-                                      } else if (choice == 'cancelar') {}
-                                    },
-                                    itemBuilder: (BuildContext context) =>
-                                        <PopupMenuEntry<String>>[
-                                      const PopupMenuItem<String>(
-                                        value: 'editar',
-                                        child: Text('Editar comentario'),
-                                      ),
-                                      const PopupMenuItem<String>(
-                                        value: 'cancelar',
-                                        child: Text('Cancelar'),
-                                      ),
-                                    ],
-                                  )
-                                : null,
+                            trailing: IconButton(
+                              icon: Icon(Icons.block,
+                                  color: Colors.red), // Icono rojo para banear
+                              onPressed: () async {
+                                // Lógica para banear el comentario
+                                String externalId =comentario['external_id'].toString();
+                                String noticia=noticias[entryKey]['external_id'].toString();
+                                await banearComentario(externalId,noticia);
+                                setState(() {});
+                              },
+                            ),
                           );
                         },
                       ),
                     ),
-                    SizedBox(height: 8),
-                    TextField(
-                      controller: _commentController,
-                      maxLines: 2,
-                      decoration: InputDecoration(
-                        hintText: 'Escribe un comentario...',
-                        border: OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          onPressed: () async {
-                            await agregarComentario(externalId);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Comentario agregado')),
-                            );
-                            await verComentariosNoti(externalId);
-                            await verComentariosUser(externalId);
-                            setState(() {});
-                            _commentController.clear();
-                          },
-                          icon: Icon(Icons.send),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -384,107 +226,52 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> editarComentario(
-      String externalId, String comentario, String externalNoticia) async {
-    Utiles util = Utiles();
-    String? externalUser = await util.getValue('external');
-    Position position = await _determinarposicion();
-    String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-    Map<String, String> mapa = {
-      "texto": comentario,
-      "usuario": externalUser.toString(),
-      "latitud": position.latitude.toString(),
-      "longitud": position.longitude.toString(),
-      "fecha": formattedDate,
-    };
-    var response = await FacadeService().modifyComment(mapa, externalId);
-    if (response.code == 200) {
-      SnackBar msg = SnackBar(content: Text('Comentario editado'));
-      ScaffoldMessenger.of(context).showSnackBar(msg);
-
-      await verComentariosNoti(externalNoticia); // Actualiza los comentarios
-      await actualizarComentarios();
-      await verComentariosUser(externalId);
-    } else {
-      showPlatformDialog(
-        context: context,
-        builder: (context) {
-          return BasicDialogAlert(
-            title: Text("Error"),
-            content: Text(response.msg.toString()),
-            actions: <Widget>[
-              BasicDialogAction(
-                title: Text("OK"),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          );
-        },
-      );
+Future<void> banearComentario(String externalId, String noticia) async {
+  try {
+    bool? confirmacion = await mostrarDialogoConfirmacion(context);
+    if (confirmacion != null && confirmacion) {
+      FacadeService servicio = FacadeService();
+      Map<String, String> mapa = {"comentario": externalId};
+      var response = await servicio.banearUsuarioxComentario(externalId,mapa);
+      if (response.code == 200) {
+        await verComentariosNoti(noticia);
+        final SnackBar msg = SnackBar(content: Text('Comentario baneado exitosamente'));
+        ScaffoldMessenger.of(context).showSnackBar(msg);
+      } else {
+        final SnackBar msg = SnackBar(content: Text(response.msg.toString()));
+        ScaffoldMessenger.of(context).showSnackBar(msg);
+      }
     }
+  } catch (error) {
+    print("Error al banear comentario: $error");
   }
+}
 
-  Future<void> actualizarComentarios() async {
-    setState(() {
-      comentarios = List.from(_comentariosLocales);
-      print("simn simn$comentarios");
-    });
-  }
-
-  void _showEditCommentSheet(String initialText, Function(String) onSave) {
-    TextEditingController _editController =
-        TextEditingController(text: initialText);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return SingleChildScrollView(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Container(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      'Editar comentario',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    TextField(
-                      controller: _editController,
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        onSave(_editController.text);
-                        Navigator.of(context).pop();
-                      },
-                      child: Text('Guardar'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
+Future<bool?> mostrarDialogoConfirmacion(BuildContext context) async {
+  return await showDialog<bool?>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Confirmación'),
+        content: Text('¿Estás seguro de que quieres banear a esta persona?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true); // Confirma la acción
+            },
+            child: Text('Sí'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false); // Cancela la acción
+            },
+            child: Text('Cancelar'),
+          ),
+        ],
+      );
+    },
+  );
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -498,7 +285,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Colors.greenAccent,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -524,6 +311,13 @@ class _HomePageState extends State<HomePage> {
               title: Text('Editar perfil'),
               onTap: () {
                 Navigator.pushNamed(context, '/editarPerfilUser');
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.share_location),
+              title: Text('Ver Mapa de comentarios'),
+              onTap: () {
+                Navigator.pushNamed(context, '/mapa');
               },
             ),
             ListTile(
@@ -578,6 +372,21 @@ class _HomePageState extends State<HomePage> {
                             Text('Fecha: ${noticias[entry.key]['fecha']}'),
                             Text(
                                 'Tipo de noticia: ${noticias[entry.key]['tipo_noticia']}'),
+                            ButtonBar(
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.share_location),
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/mapa',
+                                        arguments: {
+                                          'external': noticias[entry.key]
+                                                  ['external_id']
+                                              .toString()
+                                        });
+                                  },
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -594,6 +403,6 @@ class _HomePageState extends State<HomePage> {
 
 void main() {
   runApp(MaterialApp(
-    home: HomePage(),
+    home: AdminPage(),
   ));
 }

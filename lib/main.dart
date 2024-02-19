@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:noticias/views/AdminPage.dart';
 import 'package:noticias/views/HomePage.dart';
 
 import 'package:noticias/views/exceptions/Page404.dart';
+import 'package:noticias/views/mapa.dart';
 import 'package:noticias/views/registerView.dart';
 import 'package:noticias/views/sessionview.dart';
+import 'package:noticias/views/userEditProfile.dart';
 
 
 
@@ -29,7 +32,9 @@ class MyApp extends StatelessWidget {
         "/home": (context) => const SessionView(),
         "/register": (context) => const RegisterView(),
         "/principal": (context) => const HomePage(),
-        "/editarPerfilUser": (context) => const RegisterView(),
+        "/editarPerfilUser": (context) =>  UserEditProfile(),
+        "/admin": (context) => const AdminPage(),
+        "/mapa": (context) => const Mapa(),
       },
       onGenerateRoute: (settings) => MaterialPageRoute(
         builder: (context) => const Page404(),
